@@ -1,1 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta nameviewport" content="width=device-width, initial-scale=1.0">
+  <title>SafetyNet - Gunshot Detection System</title>
+  <!-- Add Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;a
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f5f5f7;
+      color: #333;
+    }
+    
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    .sidebar {
+      width: 120px;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar-logo {
+      margin-bottom: 30px;
+    }
+    
+    .create-alert {
+      background-color: white;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      width: 90px;
+      text-align: center;
+    }
+    
+    .sidebar-menu {
+      list-style: none;
+      width: 100%;
+    }
+    
+    .sidebar-menu li {
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0.7;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .sidebar-menu li.active {
+      opacity: 1;
+      position: relative;
+    }
+    
+    .sidebar-menu li.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: #ff6b35;
+    }
+    
+    .sidebar-menu i {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    
+    .sidebar-avatar {
+      margin-top: auto;
+      width: 40px;
+      height: 40px;
+      background-color: #ff6b35;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 500;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 20px;
+      padding: 8px 15px;
+      width: 300px;
+    }
+    
+    .search-bar input {
+      border: none;
+      outline: none;
+      flex: 1;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-profile span {
+      margin-right: 10px;
+      font-size: 14px;
+    }
+    
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      background-color: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .overview-card {
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .overview-card .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      color: white;
+    }
+    
+    .overview-card .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    
+    .overview-card .value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .overview-card .sub-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+    
+    .map-section {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .map-container {
+      flex: 2;
+      background-color: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      position: relative;
+      height: 400px;
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .incidents-list {
+      flex: 1;
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      overflow-y: auto;
+      max-height: 400px;
+    }
+    
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .section-title h2 {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      background-color: #f5f5f7;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .filter-btn i {
+      margin-left: 5px;
+    }
+    
+    .incident-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .incident-item:last-child {
+      border-bottom: none;
+    }
+    
+    .incident-icon {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 15px;
+    }
+    
+    .incident-details {
+      flex: 1;
+    }
+    
+    .incident-details h3 {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    
+    .incident-details p {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .incident-meta {
+      font-size: 12px;
+      color: #666;
+      text-align: right;
+    }
+    
+    .progress-section {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .activity-list {
+      flex: 1;
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .progress-chart {
+      flex: 1;
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+    
+    .progress-gauge {
+      width: 200px;
+      height: 100px;
+      margin: 20px auto;
+      position: relative;
+    }
+    
+    .progress-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .task-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      margin-right: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+    }
+    
+    .task-details {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .task-priority {
+      padding: 3px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+    }
+    
+    .priority-high {
+      background-color: #ffebee;
+      color: #f44336;
+    }
+    
+    .priority-medium {
+      background-color: #fff8e1;
+      color: #ff9800;
+    }
+    
+    .priority-low {
+      background-color: #e8f5e9;
+      color: #4caf50;
+    }
+    
+    .emergency-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .emergency-btn {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .emergency-btn i {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    
+    .sos-btn {
+      background-color: #f44336;
+    }
+    
+    .call-police-btn {
+      background-color: #2196f3;
+    }
+    
+    .high-risk {
+      background-color: #f44336;
+    }
+    
+    .medium-risk {
+      background-color: #ff9800;
+    }
+    
+    .low-risk {
+      background-color: #4caf50;
+    }
+    
+    .validated {
+      background-color: #2196f3;
+    }
+    
+    .map-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+      z-index: 1000;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    .validate-btn {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 15px;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    
+    .custom-marker {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+      cursor: pointer;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+      }
+    }
+  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <i class="fas fa-shield-alt" style="color: #ff6b35; font-size: 24px;"></i>
+      </div>
+      <button class="create-alert">
+        <i class="fas fa-plus" style="margin-right: 5px;"></i>Report
+      </button>
+      <ul class="sidebar-menu">
+        <li>
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </li>
+        <li class="active">
+          <i class="fas fa-map-marked-alt"></i>
+          <span>Dashboard</span>
+        </li>
+        <li>
+          <a href="{{ url_for('report') }}">
+              <i class="fas fa-tasks"></i>
+              <span>Reports</span>
+          </a>
+        </li>
+        <li>
+          <i class="fas fa-calendar-alt"></i>
+          <span>History</span>
+        </li>
+        <li>
+          <i class="fas fa-chart-bar"></i>
+          <span>Analytics</span>
+        </li>
+        <li>
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </li>
+        <li>
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </li>
+      </ul>
+      <div class="sidebar-avatar">JS</div>
+    </div>
+    
+    <div class="main-content">
+      <div class="header">
+        <h1>Dashboard</h1>
+        <div class="search-bar">
+          <i class="fas fa-search" style="color: #999;"></i>
+          <input type="text" placeholder="Search for incidents...">
+        </div>
+        <div class="user-profile">
+        <button onclick="window.location.href='{{ url_for('profile') }}'">
+          <span>John Smith</span>
+          <div class="user-avatar">JS</div>
+    
+          </button>
+        
+        </div>
+      </div>
+      
+      <div class="overview">
+        <div class="overview-card">
+          <div class="icon" style="background-color: #ff6b35;">
+            <i class="fas fa-bullseye"></i>
+          </div>
+          <div class="label">Total Gunshot Incidents</div>
+          <div class="value">53</div>
+          <div class="sub-label">Last 30 days</div>
+        </div>
+        <div class="overview-card">
+          <div class="icon" style="background-color: #4caf50;">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="label">Validated Incidents</div>
+          <div class="value">36</div>
+          <div class="sub-label">68% validation rate</div>
+        </div>
+        <div class="overview-card">
+          <div class="icon" style="background-color: #2196f3;">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="label">Response Time</div>
+          <div class="value">8:12</div>
+          <div class="sub-label">Average in minutes</div>
+        </div>
+        <div class="overview-card">
+          <div class="icon" style="background-color: #ff9800;">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="label">Risk Level</div>
+          <div class="value">Medium</div>
+          <div class="sub-label">Current area safety status</div>
+        </div>
+      </div>
+      
+      <div class="map-section">
+        <div class="map-container">
+          <div id="map"></div>
+          
+          <div class="map-legend">
+            <div class="legend-item">
+              <div class="legend-color high-risk"></div>
+              <span>Recent Gunshot (< 1 hour)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color medium-risk"></div>
+              <span>Today's Gunshot</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color low-risk"></div>
+              <span>Older Gunshot (> 24 hours)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color validated"></div>
+              <span>Validated Incident</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="incidents-list">
+          <div class="section-title">
+            <h2>Recent Gunshot Incidents</h2>
+            <button class="filter-btn">
+              Filter
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          
+          <div class="incident-item">
+            <div class="incident-icon" style="background-color: #f44336;"></div>
+            <div class="incident-details">
+              <h3>Oak Street & Main Avenue</h3>
+              <p>Multiple shots detected (3)</p>
+            </div>
+            <div class="incident-meta">
+              <div>5 min ago</div>
+              <div style="color: #f44336;">Not validated</div>
+            </div>
+          </div>
+          
+          <div class="incident-item">
+            <div class="incident-icon" style="background-color: #2196f3;"></div>
+            <div class="incident-details">
+              <h3>Westfield Park</h3>
+              <p>Single shot detected</p>
+            </div>
+            <div class="incident-meta">
+              <div>24 min ago</div>
+              <div style="color: #4caf50;">Validated (4)</div>
+            </div>
+          </div>
+          
+          <div class="incident-item">
+            <div class="incident-icon" style="background-color: #ff9800;"></div>
+            <div class="incident-details">
+              <h3>Central Station</h3>
+              <p>Multiple shots detected (2)</p>
+            </div>
+            <div class="incident-meta">
+              <div>1 hour ago</div>
+              <div style="color: #4caf50;">Validated (7)</div>
+            </div>
+          </div>
+          
+          <div class="incident-item">
+            <div class="incident-icon" style="background-color: #4caf50;"></div>
+            <div class="incident-details">
+              <h3>Riverside Drive</h3>
+              <p>Single shot detected</p>
+            </div>
+            <div class="incident-meta">
+              <div>3 hours ago</div>
+              <div style="color: #4caf50;">Validated (2)</div>
+            </div>
+          </div>
+          
+          <div class="incident-item">
+            <div class="incident-icon" style="background-color: #4caf50;"></div>
+            <div class="incident-details">
+              <h3>Industry District</h3>
+              <p>Multiple shots detected (5)</p>
+            </div>
+            <div class="incident-meta">
+              <div>Yesterday</div>
+              <div style="color: #4caf50;">Validated (12)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="progress-section">
+        <div class="activity-list">
+          <div class="section-title">
+            <h2>Validation Tasks</h2>
+            <div>
+              <button class="filter-btn" style="margin-right: 10px;">
+                All
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <button class="filter-btn">
+                Sort by
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="task-item">
+            <div class="task-checkbox" style="background-color: #f44336;">
+              <i class="fas fa-exclamation"></i>
+            </div>
+            <div class="task-details">
+              <div>Validate recent gunshot at Oak Street & Main Avenue</div>
+            </div>
+            <button class="validate-btn" onclick="validateIncident(0)">Validate</button>
+          </div>
+          
+          <div class="task-item">
+            <div class="task-checkbox" style="background-color: #ff9800;">
+              <i class="fas fa-bell"></i>
+            </div>
+            <div class="task-details">
+              <div>Submit additional info for Westfield Park incident</div>
+            </div>
+            <button class="validate-btn" onclick="validateIncident(1)">Validate</button>
+          </div>
+          
+          <div class="task-item">
+            <div class="task-checkbox" style="background-color: #4caf50;">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="task-details">
+              <div>Update sound profile for Central Station detection</div>
+            </div>
+            <button class="validate-btn" onclick="validateIncident(2)">Validate</button>
+          </div>
+          
+          <div class="task-item">
+            <div class="task-checkbox" style="background-color: #ff9800;">
+              <i class="fas fa-bell"></i>
+            </div>
+            <div class="task-details">
+              <div>Review community reports for Riverside Drive incident</div>
+            </div>
+            <button class="validate-btn" onclick="validateIncident(3)">Validate</button>
+          </div>
+          
+          <div class="task-item">
+            <div class="task-checkbox" style="background-color: #4caf50;">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="task-details">
+              <div>Check sensor calibration for Industry District area</div>
+            </div>
+            <button class="validate-btn" onclick="validateIncident(4)">Validate</button>
+          </div>
+          
+          <div class="emergency-buttons">
+            <button class="emergency-btn sos-btn">
+              <i class="fas fa-exclamation-circle"></i>
+              SOS EMERGENCY
+            </button>
+            <button class="emergency-btn call-police-btn">
+              <i class="fas fa-phone-alt"></i>
+              CALL POLICE
+            </button>
+          </div>
+        </div>
+        
+        <div class="progress-chart">
+          <div class="section-title">
+            <h2>Area Safety Status</h2>
+            <button class="filter-btn">
+              Last 30 days
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          
+          <div class="progress-gauge">
+            <svg width="200" height="120" viewBox="0 0 200 120">
+              <!-- Gauge background -->
+              <path d="M10,100 A90,90 0 0,1 190,100" stroke="#e0e0e0" stroke-width="10" fill="none"/>
+              
+              <!-- Colored segments -->
+              <path d="M10,100 A90,90 0 0,1 70,28" stroke="#f44336" stroke-width="10" fill="none"/>
+              <path d="M70,28 A90,90 0 0,1 130,28" stroke="#ff9800" stroke-width="10" fill="none"/>
+              <path d="M130,28 A90,90 0 0,1 190,100" stroke="#4caf50" stroke-width="10" fill="none"/>
+              
+              <!-- Gauge needle -->
+              <line x1="100" y1="100" x2="130" y2="50" stroke="#333" stroke-width="2"/>
+              <circle cx="100" cy="100" r="5" fill="#333"/>
+            </svg>
+            <div style="position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 28px; font-weight: bold;">72%</div>
+          </div>
+          
+          <div class="progress-stats">
+            <div class="stat-item">
+              <div class="stat-value">36</div>
+              <div class="stat-label">Validated</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">17</div>
+              <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">95</div>
+              <div class="stat-label">Sensors Active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Add Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  
+  <script>
+    // Define the location coordinates for the mentioned places
+    const locations = {
+      "Oak Street & Main Avenue": { lat: 37.7749, lng: -122.4194 },
+      "Westfield Park": { lat: 37.7833, lng: -122.4167 },
+      "Central Station": { lat: 37.7694, lng: -122.4862 },
+      "Riverside Drive": { lat: 37.7835, lng: -122.4275 },
+      "Industry District": { lat: 37.7894, lng: -122.4016 }
+    };
+
+    // Initialize the map
+    const map = L.map('map').setView([37.7749, -122.4194], 13);
+
+    // Add a tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Sample data for gunshot incidents
+    const incidents = [
+      { 
+        location: "Oak Street & Main Avenue",
+        coords: locations["Oak Street & Main Avenue"],
+        time: new Date().getTime() - (5 * 60 * 1000), // 5 minutes ago
+        validated: false, 
+        shots: 3, 
+        validations: 0,
+        status: "high-risk"
+      },
+      { 
+        location: "Westfield Park",
+        coords: locations["Westfield Park"],
+        time: new Date().getTime() - (24 * 60 * 1000), // 24 minutes ago
+        validated: true, 
+        shots: 1, 
+        validations: 4,
+        status: "validated"
+      },
+      { 
+        location: "Central Station",
+        coords: locations["Central Station"],
+        time: new Date().getTime() - (1 * 60 * 60 * 1000), // 1 hour ago
+        validated: true, 
+        shots: 2, 
+        validations: 7,
+        status: "medium-risk"
+      },
+      { 
+        location: "Riverside Drive",
+        coords: locations["Riverside Drive"],
+        time: new Date().getTime() - (3 * 60 * 60 * 1000), // 3 hours ago
+        validated: true, 
+        shots: 1, 
+        validations: 2,
+        status: "low-risk"
+      },
+      { 
+        location: "Industry District",
+        coords: locations["Industry District"],
+        time: new Date().getTime() - (24 * 60 * 60 * 1000), // 24 hours ago
+        validated: true, 
+        shots: 5, 
+        validations: 12,
+        status: "low-risk"
+      }
+    ];
+
+    // Create custom icon for gunshot marker
+    function createCustomIcon(status) {
+      let color;
+      switch(status) {
+        case 'high-risk':
+          color = '#f44336'; // red
+          break;
+        case 'medium-risk':
+          color = '#ff9800'; // orange
+          break;
+        case 'low-risk':
+          color = '#4caf50'; // green
+          break;
+        case 'validated':
+          color = '#2196f3'; // blue
+          break;
+        default:
+          color = '#f44336';
+      }
+      
+      return L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background-color: ${color}; width: 100%; height: 100%;"></div>`,
+        iconSize: [20, 20]
+      });
+    }
+
+    // Add markers for each incident
+    incidents.forEach(incident => {
+      const marker = L.marker([incident.coords.lat, incident.coords.lng], {
+        icon: createCustomIcon(incident.status)
+      }).addTo(map);
+      
+      // Add popup with incident details
+      marker.bindPopup(`
+        <b>${incident.location}</b><br>
+        Shots detected: ${incident.shots}<br>
+        Status: ${incident.validated ? 'Validated' : 'Not validated'}<br>
+        Validations: ${incident.validations}
+      `);
+    });
+
+    // Function to update the validation count in the UI
+function updateValidationCount(index) {
+  const incidentMetaElements = document.querySelectorAll('.incident-meta');
+  const incidentMeta = incidentMetaElements[index];
+  
+  if (incidentMeta) {
+    const validationText = incidentMeta.querySelector('div:last-child');
+    
+    if (incidents[index].validated) {
+      incidents[index].validations += 1;
+      validationText.innerHTML = `Validated (${incidents[index].validations})`;
+      validationText.style.color = '#4caf50';
+    } else {
+      incidents[index].validated = true;
+      incidents[index].validations = 1;
+      validationText.innerHTML = `Validated (${incidents[index].validations})`;
+      validationText.style.color = '#4caf50';
+    }
+    
+    // Update the marker color on the map
+    map.eachLayer(function(layer) {
+      if (layer instanceof L.Marker) {
+        const position = layer.getLatLng();
+        if (position.lat === incidents[index].coords.lat && 
+            position.lng === incidents[index].coords.lng) {
+          // Remove the old marker
+          map.removeLayer(layer);
+          
+          // Add a new marker with validated status
+          incidents[index].status = "validated";
+          const newMarker = L.marker([incidents[index].coords.lat, incidents[index].coords.lng], {
+            icon: createCustomIcon("validated")
+          }).addTo(map);
+          
+          // Add popup with incident details
+          newMarker.bindPopup(`
+            <b>${incidents[index].location}</b><br>
+            Shots detected: ${incidents[index].shots}<br>
+            Status: Validated<br>
+            Validations: ${incidents[index].validations}
+          `);
+        }
+      }
+    });
+  }
+}
+
+// Function to validate an incident from the task list
+function validateIncident(index) {
+  updateValidationCount(index);
+  
+  // Update the task appearance
+  const taskItems = document.querySelectorAll('.task-item');
+  const taskItem = taskItems[index];
+  
+  if (taskItem) {
+    const taskCheckbox = taskItem.querySelector('.task-checkbox');
+    const validateButton = taskItem.querySelector('.validate-btn');
+    
+    taskCheckbox.style.backgroundColor = '#4caf50';
+    taskCheckbox.innerHTML = '<i class="fas fa-check"></i>';
+    validateButton.disabled = true;
+    validateButton.textContent = 'Validated';
+    validateButton.style.backgroundColor = '#dddddd';
+    validateButton.style.cursor = 'default';
+    
+    // Update statistics
+    const validatedCount = document.querySelector('.overview-card:nth-child(2) .value');
+    let newCount = parseInt(validatedCount.textContent) + 1;
+    validatedCount.textContent = newCount;
+    
+    const validationRate = document.querySelector('.overview-card:nth-child(2) .sub-label');
+    const totalIncidents = parseInt(document.querySelector('.overview-card:nth-child(1) .value').textContent);
+    const newRate = Math.round((newCount / totalIncidents) * 100);
+    validationRate.textContent = `${newRate}% validation rate`;
+    
+    // Update progress chart stats
+    const validatedStat = document.querySelector('.stat-item:nth-child(1) .stat-value');
+    validatedStat.textContent = newCount;
+    
+    const pendingStat = document.querySelector('.stat-item:nth-child(2) .stat-value');
+    let pendingCount = parseInt(pendingStat.textContent) - 1;
+    pendingStat.textContent = pendingCount;
+    
+    // Update progress gauge
+    const safetyPercentage = document.querySelector('.progress-gauge div');
+    const newSafetyPercentage = Math.min(Math.round((newCount / totalIncidents) * 100) + 5, 100);
+    safetyPercentage.textContent = `${newSafetyPercentage}%`;
+    
+    // Adjust the needle position in the gauge
+    const needle = document.querySelector('.progress-gauge line');
+    const angle = (newSafetyPercentage / 100) * 180 - 90;
+    const x2 = 100 + 80 * Math.cos(angle * Math.PI / 180);
+    const y2 = 100 + 80 * Math.sin(angle * Math.PI / 180);
+    needle.setAttribute('x2', x2);
+    needle.setAttribute('y2', y2);
+  }
+}
+
+// Add event listener for the search bar
+document.querySelector('.search-bar input').addEventListener('input', function(e) {
+  const searchTerm = e.target.value.toLowerCase();
+  const incidentItems = document.querySelectorAll('.incident-item');
+  
+  incidentItems.forEach(item => {
+    const location = item.querySelector('.incident-details h3').textContent.toLowerCase();
+    if (location.includes(searchTerm)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+});
+
+// Add event listener for report button
+document.querySelector('.create-alert').addEventListener('click', function() {
+  alert('Report functionality is under development');
+});
+
+// Add event listeners for emergency buttons
+document.querySelector('.sos-btn').addEventListener('click', function() {
+  if (confirm('Are you sure you want to send an SOS emergency alert?')) {
+    alert('SOS emergency alert sent. Emergency services have been notified.');
+  }
+});
+
+document.querySelector('.call-police-btn').addEventListener('click', function() {
+  if (confirm('Are you sure you want to call the police?')) {
+    alert('Connecting to emergency services...');
+  }
+});
+
+// Simulate a real-time gunshot detection
+setTimeout(() => {
+  // Create a new incident
+  const newIncident = {
+    location: "Hillside Heights",
+    coords: { lat: 37.7669, lng: -122.4475 },
+    time: new Date().getTime(),
+    validated: false,
+    shots: 2,
+    validations: 0,
+    status: "high-risk"
+  };
+  
+  // Add new marker to the map
+  const newMarker = L.marker([newIncident.coords.lat, newIncident.coords.lng], {
+    icon: createCustomIcon("high-risk")
+  }).addTo(map);
+  
+  // Add popup with incident details
+  newMarker.bindPopup(`
+    <b>${newIncident.location}</b><br>
+    Shots detected: ${newIncident.shots}<br>
+    Status: Not validated<br>
+    Validations: ${newIncident.validations}
+  `);
+  
+  // Add to incidents array
+  incidents.unshift(newIncident);
+  
+  // Create and add new incident item to the list
+  const incidentsList = document.querySelector('.incidents-list');
+  const sectionTitle = incidentsList.querySelector('.section-title');
+  
+  const newIncidentItem = document.createElement('div');
+  newIncidentItem.className = 'incident-item';
+  newIncidentItem.innerHTML = `
+    <div class="incident-icon" style="background-color: #f44336;"></div>
+    <div class="incident-details">
+      <h3>${newIncident.location}</h3>
+      <p>Multiple shots detected (${newIncident.shots})</p>
+    </div>
+    <div class="incident-meta">
+      <div>Just now</div>
+      <div style="color: #f44336;">Not validated</div>
+    </div>
+  `;
+  
+  // Insert after section title
+  sectionTitle.insertAdjacentElement('afterend', newIncidentItem);
+  
+  // Update incident count
+  const totalIncidentsElement = document.querySelector('.overview-card:nth-child(1) .value');
+  const totalIncidents = parseInt(totalIncidentsElement.textContent) + 1;
+  totalIncidentsElement.textContent = totalIncidents;
+  
+  // Update pending count
+  const pendingStat = document.querySelector('.stat-item:nth-child(2) .stat-value');
+  const pendingCount = parseInt(pendingStat.textContent) + 1;
+  pendingStat.textContent = pendingCount;
+  
+  // Add notification sound
+  const audio = new Audio('https://cdnjs.cloudflare.com/ajax/libs/soundmanager2/2.97a.20150601/swf/soundmanager2.swf');
+  audio.play().catch(e => console.log('Audio playback prevented:', e));
+  
+  // Display alert
+  const notification = document.createElement('div');
+  notification.style.position = 'fixed';
+  notification.style.bottom = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = '#f44336';
+  notification.style.color = 'white';
+  notification.style.padding = '15px 20px';
+  notification.style.borderRadius = '10px';
+  notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+  notification.style.zIndex = '2000';
+  notification.style.display = 'flex';
+  notification.style.alignItems = 'center';
+  notification.style.animation = 'fadeIn 0.5s ease-in-out';
+  
+  notification.innerHTML = `
+    <i class="fas fa-exclamation-circle" style="margin-right: 10px; font-size: 20px;"></i>
+    <div>
+      <strong>ALERT: New gunshot detected</strong><br>
+      Location: ${newIncident.location}
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Add some animation
+  document.head.insertAdjacentHTML('beforeend', `
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  `);
+  
+  // Remove notification after 5 seconds
+  setTimeout(() => {
+    notification.style.animation = 'fadeOut 0.5s ease-in-out';
+    notification.style.opacity = '0';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 500);
+    
+    // Add fadeOut animation
+    document.head.insertAdjacentHTML('beforeend', `
+      <style>
+        @keyframes fadeOut {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(20px); }
+        }
+      </style>
+    `);
+  }, 5000);
+}, 10000); // Simulate after 10 seconds
+
+// Add browser notification support
+if ('Notification' in window) {
+  if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    document.addEventListener('click', function requestNotificationPermission() {
+      Notification.requestPermission();
+      document.removeEventListener('click', requestNotificationPermission);
+    });
+  }
+}
+
+// Handle window resize events to keep the map responsive
+window.addEventListener('resize', function() {
+  map.invalidateSize();
+});
+
+// Initialize tooltips for buttons
+document.querySelectorAll('.filter-btn, .validate-btn, .emergency-btn').forEach(button => {
+  button.setAttribute('title', button.textContent.trim());
+});
+</script>
+</body>
+</html>

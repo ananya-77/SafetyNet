@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafetyNet - Sensor Reports</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f5f5f7;
+      color: #333;
+    }
+    
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    .sidebar {
+      width: 120px;
+      background-color: #1a1a1a;
+      color: white;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar-logo {
+      margin-bottom: 30px;
+    }
+    
+    .create-alert {
+      background-color: white;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      width: 90px;
+      text-align: center;
+    }
+    
+    .sidebar-menu {
+      list-style: none;
+      width: 100%;
+    }
+    
+    .sidebar-menu li {
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0.7;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .sidebar-menu li.active {
+      opacity: 1;
+      position: relative;
+    }
+    
+    .sidebar-menu li.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: #ff6b35;
+    }
+    
+    .sidebar-menu i {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    
+    .sidebar-avatar {
+      margin-top: auto;
+      width: 40px;
+      height: 40px;
+      background-color: #ff6b35;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 500;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 20px;
+      padding: 8px 15px;
+      width: 300px;
+    }
+    
+    .search-bar input {
+      border: none;
+      outline: none;
+      flex: 1;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-profile span {
+      margin-right: 10px;
+      font-size: 14px;
+    }
+    
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      background-color: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .section-title h2 {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      background-color: #f5f5f7;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .filter-btn i {
+      margin-left: 5px;
+    }
+    
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .sensor-card {
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .sensor-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sensor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .sensor-id {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .sensor-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .sensor-status.active {
+      background-color: #4caf50;
+    }
+    
+    .sensor-status.inactive {
+      background-color: #f44336;
+    }
+    
+    .sensor-status.unknown {
+      background-color: #9e9e9e;
+    }
+    
+    .sensor-location {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .sensor-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    
+    .sensor-stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .sensor-actions {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .sensor-btn {
+      flex: 1;
+      border: none;
+      background-color: #f5f5f7;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: background-color 0.2s;
+    }
+    
+    .sensor-btn:last-child {
+      margin-right: 0;
+    }
+    
+    .sensor-btn:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .sensor-btn.primary {
+      background-color: #2196f3;
+      color: white;
+    }
+    
+    .sensor-btn.primary:hover {
+      background-color: #1976d2;
+    }
+    
+    .active-sensor-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .active-sensor-container {
+      background-color: white;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 15px;
+      padding: 30px;
+      position: relative;
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    .sensor-detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .sensor-detail-id {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .sensor-detail-status {
+      display: flex;
+      align-items: center;
+    }
+    
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    
+    .status-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .sensor-detail-content {
+      display: flex;
+    }
+    
+    .sensor-map {
+      flex: 1;
+      height: 300px;
+      background-color: #f5f5f7;
+      border-radius: 10px;
+      margin-right: 20px;
+      overflow: hidden;
+    }
+    
+    .sensor-controls {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .audio-upload {
+      margin-bottom: 20px;
+    }
+    
+    .upload-btn {
+      width: 100%;
+      padding: 15px;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: border-color 0.2s;
+    }
+    
+    .upload-btn:hover {
+      border-color: #2196f3;
+    }
+    
+    .upload-btn i {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #666;
+    }
+    
+    #audio-file {
+      display: none;
+    }
+    
+    .audio-controls {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    
+    .analyze-btn {
+      width: 100%;
+      padding: 15px;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background-color 0.2s;
+    }
+    
+    .analyze-btn:hover {
+      background-color: #1976d2;
+    }
+    
+    .analyze-btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .analysis-result {
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .result-positive {
+      background-color: #e8f5e9;
+      color: #4caf50;
+    }
+    
+    .result-negative {
+      background-color: #ffebee;
+      color: #f44336;
+    }
+    
+    .result-unknown {
+      background-color: #f5f5f5;
+      color: #9e9e9e;
+    }
+    
+    .sensor-metrics {
+      background-color: #f5f5f7;
+      border-radius: 10px;
+      padding: 15px;
+    }
+    
+    .metric-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .metric-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .metric-label {
+      color: #666;
+    }
+  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <i class="fas fa-shield-alt" style="color: #ff6b35; font-size: 24px;"></i>
+      </div>
+      <button class="create-alert">
+        <i class="fas fa-plus" style="margin-right: 5px;"></i>Report
+      </button>
+      <ul class="sidebar-menu">
+        <li>
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </li>
+        <li>
+          <i class="fas fa-map-marked-alt"></i>
+          <span>Dashboard</span>
+        </li>
+        <li class="active">
+          <i class="fas fa-tasks"></i>
+          <span>Reports</span>
+        </li>
+        <li>
+          <i class="fas fa-calendar-alt"></i>
+          <span>History</span>
+        </li>
+        <li>
+          <i class="fas fa-chart-bar"></i>
+          <span>Analytics</span>
+        </li>
+        <li>
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </li>
+        <li>
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </li>
+      </ul>
+      <div class="sidebar-avatar">JS</div>
+    </div>
+    
+    <div class="main-content">
+      <div class="header">
+        <h1>Sensor Reports</h1>
+        <div class="search-bar">
+          <i class="fas fa-search" style="color: #999;"></i>
+          <input type="text" placeholder="Search for sensors...">
+        </div>
+        <div class="user-profile">
+          <span>John Smith</span>
+          <div class="user-avatar">JS</div>
+        </div>
+      </div>
+      
+      <div class="section-title">
+        <h2>Available Sensors</h2>
+        <div>
+          <button class="filter-btn" style="margin-right: 10px;">
+            Status: All
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <button class="filter-btn">
+            Sort by: Location
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="sensor-grid">
+        <!-- Sensor 1 -->
+        <div class="sensor-card" data-id="sensor-001" data-status="active" data-location="Oak Street & Main Avenue">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #001</div>
+            <div class="sensor-status active"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Oak Street & Main Avenue
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">24</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">92%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">4.5s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+        
+        <!-- Sensor 2 -->
+        <div class="sensor-card" data-id="sensor-002" data-status="inactive" data-location="Westfield Park">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #002</div>
+            <div class="sensor-status inactive"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Westfield Park
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">18</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">87%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">5.2s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+        
+        <!-- Sensor 3 -->
+        <div class="sensor-card" data-id="sensor-003" data-status="unknown" data-location="Central Station">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #003</div>
+            <div class="sensor-status unknown"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Central Station
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">37</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">95%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">3.8s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+        
+        <!-- Sensor 4 -->
+        <div class="sensor-card" data-id="sensor-004" data-status="active" data-location="Riverside Drive">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #004</div>
+            <div class="sensor-status active"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Riverside Drive
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">15</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">89%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">4.1s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+        
+        <!-- Sensor 5 -->
+        <div class="sensor-card" data-id="sensor-005" data-status="inactive" data-location="Industry District">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #005</div>
+            <div class="sensor-status inactive"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Industry District
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">42</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">93%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">3.9s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+        
+        <!-- Sensor 6 -->
+        <div class="sensor-card" data-id="sensor-006" data-status="active" data-location="Downtown Square">
+          <div class="sensor-header">
+            <div class="sensor-id">Sensor #006</div>
+            <div class="sensor-status active"></div>
+          </div>
+          <div class="sensor-location">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Downtown Square
+          </div>
+          <div class="sensor-stats">
+            <div class="sensor-stat">
+              <div class="stat-value">29</div>
+              <div class="stat-label">Detections</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">91%</div>
+              <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="sensor-stat">
+              <div class="stat-value">4.3s</div>
+              <div class="stat-label">Avg Response</div>
+            </div>
+          </div>
+          <div class="sensor-actions">
+            <button class="sensor-btn">Details</button>
+            <button class="sensor-btn">History</button>
+            <button class="sensor-btn primary" onclick="window.location.href='/test'">Test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Active Sensor Overlay -->
+  <div class="active-sensor-overlay" id="activeSensorOverlay">
+    <div class="active-sensor-container">
+      <button class="close-btn" id="closeSensorOverlay">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="sensor-detail-header">
+        <div class="sensor-detail-id">Sensor #001</div>
+        <div class="sensor-detail-status">
+          <div class="status-indicator" style="background-color: #4caf50;"></div>
+          <div class="status-text">Active</div>
+        </div>
+      </div>
+      <div class="sensor-detail-content">
+        <div class="sensor-map">
+          <img src="/api/placeholder/500/300" alt="Sensor location map" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div class="sensor-controls">
+          <div class="audio-upload">
+            <label for="audio-file" class="upload-btn">
+              <i class="fas fa-upload"></i>
+              <div>Upload Audio File</div>
+              <div style="font-size: 12px; color: #666;">or drag and drop</div>
+            </label>
+            <input type="file" id="audio-file" accept="audio/*">
+            <div id="file-name" style="font-size: 14px; color: #666; text-align: center;"></div>
+          </div>
+          <audio controls class="audio-controls" id="audio-player" style="display: none;">
+            <source src="" type="audio/mpeg">
+            Your browser does not support the audio element.
+          </audio>
+          <button class="analyze-btn" id="analyze-btn" disabled>Analyze Audio</button>
+          <div class="analysis-result" id="analysis-result"></div>
+          <div class="sensor-metrics">
+            <div class="metric-item">
+              <div class="metric-label">Sensor Type:</div>
+              <div>Acoustic Pattern Recognition</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Last Calibration:</div>
+              <div>March 15, 2025</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Battery Level:</div>
+              <div>87%</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Signal Strength:</div>
+              <div>Excellent</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Storage:</div>
+              <div>4.2 GB / 8 GB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation script for routing between pages
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get sidebar menu items
+      const menuItems = document.querySelectorAll('.sidebar-menu li');
+      
+      // Add click event listeners to menu items
+      menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const pageName = this.querySelector('span').textContent.toLowerCase();
+          
+          // Remove active class from all menu items
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          
+          // Add active class to clicked menu item
+          this.classList.add('active');
+          
+          // Handle page navigation
+          if (pageName === 'dashboard') {
+            window.location.href = 'dashboard.html';
+          } else if (pageName === 'reports') {
+            window.location.href = 'reports.html';
+          } else {
+            // For other pages that might be implemented later
+            console.log(`Navigate to ${pageName} page`);
+          }
+        });
+      });
+      
+      // Sensor card click handling
+      const sensorCards = document.querySelectorAll('.sensor-card');
+      const activeSensorOverlay = document.getElementById('activeSensorOverlay');
+      const closeSensorOverlay = document.getElementById('closeSensorOverlay');
+      const audioFileInput = document.getElementById('audio-file');
+      const fileNameDisplay = document.getElementById('file-name');
+      const audioPlayer = document.getElementById('audio-player');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const analysisResult = document.getElementById('analysis-result');
+      
+      // Show active sensor overlay when a sensor card is clicked
+      sensorCards.forEach(card => {
+        const testBtn = card.querySelector('.sensor-btn.primary');
+        testBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          
+          // Get sensor details
+          const sensorId = card.dataset.id;
+          const sensorStatus = card.dataset.status;
+          const sensorLocation = card.dataset.location;
+          
+          // Update overlay with sensor details
+          document.querySelector('.sensor-detail-id').textContent = `Sensor #${sensorId.split('-')[1]}`;
+          
+          // Update status indicator
+          const statusIndicator = document.querySelector('.status-indicator');
+          const statusText = document.querySelector('.status-text');
+          
+          if (sensorStatus === 'active') {
+            statusIndicator.style.backgroundColor = '#4caf50';
+            statusText.textContent = 'Active';
+          } else if (sensorStatus === 'inactive') {
+            statusIndicator.style.backgroundColor = '#f44336';
+            statusText.textContent = 'Inactive';
+          } else {
+            statusIndicator.style.backgroundColor = '#9e9e9e';
+            statusText.textContent = 'Unknown';
+          }
+          
+          // Show overlay
+          activeSensorOverlay.style.display = 'flex';
+          
+          // Reset audio analysis
+          audioPlayer.style.display = 'none';
+          audioFileInput.value = '';
+          fileNameDisplay.textContent = '';
+          analyzeBtn.disabled = true;
+          analysisResult.style.display = 'none';
+          analysisResult.textContent = '';
+          analysisResult.className = 'analysis-result';
+        });
+      });
+      
+      // Close active sensor overlay
+      closeSensorOverlay.addEventListener('click', function() {
+        activeSensorOverlay.style.display = 'none';
+      });
+      
+      // Handle file upload
+      audioFileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          const file = this.files[0];
+          fileNameDisplay.textContent = file.name;
+          
+          // Create object URL for audio playback
+          const objectURL = URL.createObjectURL(file);
+          audioPlayer.src = objectURL;
+          audioPlayer.style.display = 'block';
+          
+          // Enable analyze button
+          analyzeBtn.disabled = false;
+        }
+      });
+      
+      // Handle audio analysis
+      analyzeBtn.addEventListener('click', function() {
+        // Show loading state
+        this.textContent = 'Analyzing...';
+        this.disabled = true;
+        
+        // Simulate analysis (in a real app, this would be a backend call)
+        setTimeout(() => {
+          // Generate random result for demonstration
+          const results = ['positive', 'negative', 'unknown'];
+          const randomResult = results[Math.floor(Math.random() * results.length)];
+          
+          // Update result display
+          analysisResult.style.display = 'block';
+          
+          if (randomResult === 'positive') {
+            analysisResult.textContent = 'GUNSHOT DETECTED';
+            analysisResult.className = 'analysis-result result-positive';
+          } else if (randomResult === 'negative') {
+            analysisResult.textContent = 'NO GUNSHOT DETECTED';
+            analysisResult.className = 'analysis-result result-negative';
+          } else {
+            analysisResult.textContent = 'UNABLE TO ANALYZE';
+            analysisResult.className
